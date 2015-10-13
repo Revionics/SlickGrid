@@ -9,7 +9,11 @@
                     Max: MaxAggregator,
                     Sum: SumAggregator,
                     UniqueString: UniqueStringAggregator,
-                    SelectionCount: SelectionCountAggregator
+                    SelectionCount: SelectionCountAggregator,
+                    IntegerRange: IntegerRangeAggregator,
+                    DateRange: DateRangeAggregator,
+                    CurrencyRange: CurrencyRangeAggregator,
+                    PercentRange: PercentRangeAggregator
                 }
             }
         }
@@ -1177,4 +1181,142 @@
             groupTotals.sum[this.field_] = this.sum_;
         }
     }
+
+    var array ={
+        Min: function (arr) {
+            return Math.min.apply( Math, arr );
+        },
+        Max: function (arr) {
+            return Math.max.apply( Math, arr );
+        }
+    }
+
+    function IntegerRangeAggregator(field){
+        this.field_ = field;
+
+        this.init = init;
+        this.accumulate = accumulate;
+        this.storeResult = storeResult;
+
+        function init() {
+            this.minElement = [];
+            this.maxElement = [];
+
+        }
+
+        function accumulate(item) {
+           this.minElement.push(item[this.field_][0]);
+           if(item[this.field_][1]){
+                this.maxElement.push(item[this.field_][1]);
+           }
+
+        }
+
+        function storeResult(groupTotals) {
+            groupTotals.integerRange =  groupTotals.integerRange || {};
+            groupTotals.integerRange[this.field_] = (this.maxElement.length === 0) ? [array.Min(this.minElement)] :[array.Min(this.minElement),array.Max(this.maxElement)];
+        }
+    }
+
+    function DateRangeAggregator(field){
+        this.field_ = field;
+
+        this.init = init;
+        this.accumulate = accumulate;
+        this.storeResult = storeResult;
+
+        function init() {
+            this.minElement = [];
+            this.maxElement = [];
+
+        }
+
+        function accumulate(item) {
+
+           this.minElement.push(new Date(item[this.field_][0]));
+           if(item[this.field_][1]){
+                this.maxElement.push(new Date(item[this.field_][1]));
+           }
+
+        }
+
+        function storeResult(groupTotals) {
+
+            function getFormattedDate(date) {
+                var year = date.getFullYear();
+                var month = (1 + date.getMonth()).toString();
+                month = month.length > 1 ? month : '0' + month;
+                var day = date.getDate().toString();
+                day = day.length > 1 ? day : '0' + day;
+                return month + '/' +  day + '/' + year ;
+            }
+
+              var array ={
+                Min: function (arr) {
+                    return new Date(Math.min.apply(null,arr));
+                },
+                Max: function (arr) {
+                    return new Date(Math.max.apply(null,arr));
+                }
+            }
+
+            groupTotals.DateRange =  groupTotals.DateRange || {};
+            groupTotals.DateRange[this.field_] = (this.maxElement.length === 0) ? [getFormattedDate(array.Min(this.minElement))] :[getFormattedDate(array.Min(this.minElement)),getFormattedDate(array.Max(this.maxElement))];
+        }
+    }
+
+    function CurrencyRangeAggregator(field){
+        this.field_ = field;
+
+        this.init = init;
+        this.accumulate = accumulate;
+        this.storeResult = storeResult;
+
+        function init() {
+            this.minElement = [];
+            this.maxElement = [];
+
+        }
+
+        function accumulate(item) {
+           this.minElement.push(item[this.field_][0]);
+           if(item[this.field_][1]){
+                this.maxElement.push(item[this.field_][1]);
+           }
+
+        }
+
+        function storeResult(groupTotals) {
+            groupTotals.CurrencyRange =  groupTotals.CurrencyRange || {};
+            groupTotals.CurrencyRange[this.field_] = (this.maxElement.length === 0) ? [array.Min(this.minElement)] :[array.Min(this.minElement),array.Max(this.maxElement)];
+        }
+    }
+
+    function PercentRangeAggregator(field){
+        this.field_ = field;
+
+        this.init = init;
+        this.accumulate = accumulate;
+        this.storeResult = storeResult;
+
+        function init() {
+            this.minElement = [];
+            this.maxElement = [];
+
+        }
+
+        function accumulate(item) {
+           this.minElement.push(item[this.field_][0]);
+           if(item[this.field_][1]){
+                this.maxElement.push(item[this.field_][1]);
+           }
+
+        }
+
+        function storeResult(groupTotals) {
+            groupTotals.PercentRange =  groupTotals.PercentRange || {};
+            groupTotals.PercentRange[this.field_] = (this.maxElement.length === 0) ? [array.Min(this.minElement)] :[array.Min(this.minElement),array.Max(this.maxElement)];
+        }
+    }
+
 })(jQuery);
