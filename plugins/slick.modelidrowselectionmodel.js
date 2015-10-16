@@ -9,7 +9,9 @@
         var _grid, _inHandler, _options;
         var _ranges = [], _selectedUniqueIds = [];
         var _self = this;
+        var _groupSelected = undefined; //Just to know if first click was to a group
         var _allSelected = false;
+        var _groupSelection = []; // Keep the list of Gruop Clicked
         var _handler = new Slick.EventHandler();
         var _nonSelected = [new Slick.Range(0, 1, 0, 1)];
         var _defaults = { selectActiveRow: true };
@@ -288,39 +290,77 @@
 
         function handleClick(e) {
             var cell = _grid.getCellFromEvent(e);
+            var cellInfo = _grid.getDataItem(cell.row);
+
+            function isAGroup(){
+                return cellInfo.__group && cellInfo.__group === true;
+            }
+
+            if(isAGroup){
+                if(!_groupSelected){
+                   _groupSelected = true; 
+                }
+                _groupSelection.push(cell.row);
+
+            }else{
+                if(!_groupSelected || _groupSelected === true){
+                   _groupSelected = false; 
+                }
+                 _groupSelection = [];
+            }
+
+
             if (!cell || !_grid.canCellBeActive(cell.row, cell.cell)) {
                 return false;
             }
 
+
             var selection = rangesToRows(_ranges);
+
             var idx = $.inArray(cell.row, selection);
 
             if (!e.ctrlKey && !e.shiftKey && !e.metaKey) {
                 selection = [cell.row];
-            }
-            else if (_grid.getOptions().multiSelect) {
+            } else if (_grid.getOptions().multiSelect) {
                 if (idx === -1 && (e.ctrlKey || e.metaKey)) {
                     selection.push(cell.row);
                     _grid.setActiveCell(cell.row, cell.cell);
+
                 } else if (idx !== -1 && (e.ctrlKey || e.metaKey)) {
                     selection = $.grep(selection, function (o, i) {
                         return (o !== cell.row);
                     });
-                    _grid.setActiveCell(cell.row, cell.cell);
-                } else if (selection.length && e.shiftKey) {
-                    var last = selection.pop();
-                    var from = Math.min(cell.row, last);
-                    var to = Math.max(cell.row, last);
-                    selection = [];
-                    for (var i = from; i <= to; i++) {
-                        if (i !== last) {
-                            selection.push(i);
-                        }
-                    }
-                    selection.push(last);
-                    _grid.setActiveCell(cell.row, cell.cell);
+
+                _grid.setActiveCell(cell.row, cell.cell);
+            } else if (selection.length && e.shiftKey) {
+                if(isAGroup()){
+                    var last = _groupSelection[0]; //Work Arround to het the fisrt row Group Row CLicked in the grid Could be improve 
+                }else{
+                     var last = selection.pop();
                 }
+
+                var from = Math.min(cell.row, last);
+                var to = Math.max(cell.row, last);
+                
+                selection = [];
+                
+
+                 if(isAGroup()){
+                  _groupSelection =[];
+                 }
+                
+                for (var i = from; i <= to; i++) {
+                    if (i !== last) {
+                        selection.push(i);
+                    }
+                }
+
+                selection.push(last);
+                
+                _grid.setActiveCell(cell.row, cell.cell);
             }
+        }
+            
 
             var dataView = _grid.getData();
             var ids = getSelectionInGroup(selection, dataView);
