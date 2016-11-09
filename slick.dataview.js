@@ -8,10 +8,11 @@
                     Min: MinAggregator,
                     Max: MaxAggregator,
                     Sum: SumAggregator,
+                    Mode: ModeAggregator,
                     UniqueString: UniqueStringAggregator,
                     SelectionCount: SelectionCountAggregator,
                     NumberRange: NumberRangeAggregator,
-                    DateRange: DateStringRangeAggregator,
+                    DateRange: DateStringRangeAggregator
                 }
             }
         }
@@ -1178,6 +1179,52 @@
             }
             groupTotals.Sum[this.field_] = this.sum_;
         }
+    }
+
+    function ModeAggregator(field) {
+        this.field_ = field;
+
+        this.init = function () {
+            this.modeValues = [];
+        };
+
+        this.accumulate = function (item) {
+            var val = item[this.field_];
+            if (val != null && Array.isArray(val)) {
+                this.modeValues = this.modeValues.concat(val)
+            }
+        };
+
+        this.storeResult = function (groupTotals) {
+            if (!groupTotals.Mode) {
+                groupTotals.Mode = {};
+            }
+            groupTotals.Mode[this.field_] = calculateMode(this.modeValues);
+        }
+    }
+
+    function calculateMode(arr) {
+        var modes = [],
+            count = [],
+            i,
+            modeValue,
+            maxIndex = 0;
+
+        for (i = 0; i < arr.length; i += 1) {
+            modeValue = arr[i];
+            count[modeValue] = (count[modeValue] || 0) + 1;
+            if (count[modeValue] > maxIndex) {
+                maxIndex = count[modeValue];
+            }
+        }
+
+        for (i in count) if (count.hasOwnProperty(i)) {
+            if (count[i] === maxIndex) {
+                modes.push(i);
+            }
+        }
+
+        return modes;
     }
 
     function NumberRangeAggregator(field){
